@@ -15,13 +15,14 @@ interface AuthDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   action: "download" | "preview";
+  prefillEmail?: string;
 }
 
 // Get Discord webhook URL from environment variable
 const DISCORD_WEBHOOK_URL = import.meta.env.VITE_DISCORD_WEBHOOK_URL || "";
 
-const AuthDialog = ({ open, onOpenChange, action }: AuthDialogProps) => {
-  const [email, setEmail] = useState("");
+const AuthDialog = ({ open, onOpenChange, action, prefillEmail = "" }: AuthDialogProps) => {
+  const [email, setEmail] = useState(prefillEmail);
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
