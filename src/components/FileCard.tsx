@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { FileText, Link2 } from "lucide-react";
 import AuthDialog from "./AuthDialog";
+import PreviewModal from "./PreviewModal";
 
 interface FileItem {
   name: string;
@@ -17,6 +18,7 @@ const files: FileItem[] = [
 
 const FileCard = () => {
   const [authOpen, setAuthOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [authAction, setAuthAction] = useState<"download" | "preview">("download");
 
   const handleDownload = () => {
@@ -25,6 +27,11 @@ const FileCard = () => {
   };
 
   const handlePreview = () => {
+    setPreviewOpen(true);
+  };
+
+  const handlePreviewContinue = () => {
+    setPreviewOpen(false);
     setAuthAction("preview");
     setAuthOpen(true);
   };
@@ -80,6 +87,12 @@ const FileCard = () => {
       </div>
     </div>
 
+    <PreviewModal 
+      open={previewOpen} 
+      onOpenChange={setPreviewOpen} 
+      onContinue={handlePreviewContinue}
+      files={files}
+    />
     <AuthDialog open={authOpen} onOpenChange={setAuthOpen} action={authAction} />
     </>
   );
