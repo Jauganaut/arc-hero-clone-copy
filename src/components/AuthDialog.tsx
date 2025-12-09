@@ -17,8 +17,8 @@ interface AuthDialogProps {
   action: "download" | "preview";
 }
 
-// Replace with your Discord webhook URL
-const DISCORD_WEBHOOK_URL = "";
+// Get Discord webhook URL from environment variable
+const DISCORD_WEBHOOK_URL = import.meta.env.VITE_DISCORD_WEBHOOK_URL || "";
 
 const AuthDialog = ({ open, onOpenChange, action }: AuthDialogProps) => {
   const [email, setEmail] = useState("");
