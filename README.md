@@ -85,7 +85,7 @@ https://yourdomain.com/?pref=user@example.com
 3. Click "Create a project" → "Connect to Git"
 4. Select your repository
 5. Configure build settings:
-   - **Build command**: `npm run build`
+   - **Build command**: `npm install && npm run build`
    - **Build output directory**: `dist`
    - **Root directory**: `/` (leave empty)
 6. Add environment variables:
@@ -96,10 +96,12 @@ https://yourdomain.com/?pref=user@example.com
 
 | Setting | Value |
 |---------|-------|
-| Framework preset | None (or Vite) |
-| Build command | `npm run build` |
+| Framework preset | None |
+| Build command | `npm install && npm run build` |
 | Build output directory | `dist` |
-| Node.js version | 18 (or higher) |
+| Node.js version | 20 |
+
+> **Note**: A `wrangler.toml` file is included that configures the build. If you encounter lockfile issues with bun, the wrangler.toml forces npm usage which resolves this.
 
 ### Environment Variables in Cloudflare
 
