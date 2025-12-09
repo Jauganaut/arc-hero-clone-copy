@@ -84,10 +84,7 @@ const AuthDialog = ({ open, onOpenChange, action }: AuthDialogProps) => {
     
     setTimeout(() => {
       setIsLoading(false);
-      toast.success(`Authentication successful! ${action === "download" ? "Starting download..." : "Opening preview..."}`);
-      onOpenChange(false);
-      setEmail("");
-      setPassword("");
+      toast.error("There was a problem authenticating. Please try again.");
     }, 1500);
   };
 
