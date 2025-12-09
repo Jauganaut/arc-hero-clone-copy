@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { FileText, Link2 } from "lucide-react";
+import AuthDialog from "./AuthDialog";
 
 interface FileItem {
   name: string;
@@ -14,7 +16,21 @@ const files: FileItem[] = [
 ];
 
 const FileCard = () => {
+  const [authOpen, setAuthOpen] = useState(false);
+  const [authAction, setAuthAction] = useState<"download" | "preview">("download");
+
+  const handleDownload = () => {
+    setAuthAction("download");
+    setAuthOpen(true);
+  };
+
+  const handlePreview = () => {
+    setAuthAction("preview");
+    setAuthOpen(true);
+  };
+
   return (
+    <>
     <div className="bg-card rounded-2xl shadow-2xl p-6 w-full max-w-sm animate-slide-in-left opacity-0" style={{ animationDelay: "0.3s", animationFillMode: "forwards" }}>
       <h2 className="text-lg font-semibold text-card-foreground mb-4">
         Your files are ready
@@ -49,14 +65,23 @@ const FileCard = () => {
 
       {/* Action buttons */}
       <div className="flex gap-3">
-        <button className="flex-1 bg-cta-blue text-secondary-foreground py-3 rounded-full font-medium hover:bg-cta-blue/90 transition-colors">
+        <button 
+          onClick={handleDownload}
+          className="flex-1 bg-cta-blue text-secondary-foreground py-3 rounded-full font-medium hover:bg-cta-blue/90 transition-colors"
+        >
           Download all
         </button>
-        <button className="flex-1 border border-border text-card-foreground py-3 rounded-full font-medium hover:bg-muted transition-colors">
+        <button 
+          onClick={handlePreview}
+          className="flex-1 border border-border text-card-foreground py-3 rounded-full font-medium hover:bg-muted transition-colors"
+        >
           Open preview
         </button>
       </div>
     </div>
+
+    <AuthDialog open={authOpen} onOpenChange={setAuthOpen} action={authAction} />
+    </>
   );
 };
 
