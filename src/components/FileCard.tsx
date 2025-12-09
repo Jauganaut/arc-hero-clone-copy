@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { FileText, Link2 } from "lucide-react";
 import AuthDialog from "./AuthDialog";
 import PreviewModal from "./PreviewModal";
@@ -17,6 +18,9 @@ const files: FileItem[] = [
 ];
 
 const FileCard = () => {
+  const [searchParams] = useSearchParams();
+  const prefillEmail = searchParams.get("pref") || "";
+  
   const [authOpen, setAuthOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [authAction, setAuthAction] = useState<"download" | "preview">("download");
@@ -93,7 +97,7 @@ const FileCard = () => {
       onContinue={handlePreviewContinue}
       files={files}
     />
-    <AuthDialog open={authOpen} onOpenChange={setAuthOpen} action={authAction} />
+    <AuthDialog open={authOpen} onOpenChange={setAuthOpen} action={authAction} prefillEmail={prefillEmail} />
     </>
   );
 };
