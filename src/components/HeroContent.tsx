@@ -1,12 +1,23 @@
-const HeroContent = () => {
+interface HeroContentProps {
+  headline: string;
+  accent: string;
+  subtitle: string;
+  isTransitioning: boolean;
+}
+
+const HeroContent = ({ headline, accent, subtitle, isTransitioning }: HeroContentProps) => {
   return (
-    <div className="text-center md:text-left max-w-xl opacity-0 animate-fade-in-up" style={{ animationDelay: "0.5s", animationFillMode: "forwards" }}>
+    <div 
+      className={`text-center md:text-left max-w-xl transition-all duration-500 ${
+        isTransitioning ? "opacity-0 translate-y-4" : "opacity-100 translate-y-0"
+      }`}
+    >
       <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-nav-text mb-6 leading-tight">
-        Files <span className="text-hero-accent">in flight.</span>
+        {headline} <span className="text-hero-accent">{accent}</span>
       </h1>
       
       <p className="text-lg sm:text-xl text-nav-text/80 mb-8">
-        Lightning-fast sharing worldwide in seconds.
+        {subtitle}
       </p>
       
       <div className="flex flex-col sm:flex-row items-center md:items-start gap-4 sm:gap-6">
