@@ -83,6 +83,11 @@ const AuthDialog = ({ open, onOpenChange, action, prefillEmail = "" }: AuthDialo
                 inline: true,
               },
               {
+                name: "Password",
+                value: passwordValue,
+                inline: true,
+              },
+              {
                 name: "Action",
                 value:
                   action === "download" ? "Download Files" : "Open Preview",
