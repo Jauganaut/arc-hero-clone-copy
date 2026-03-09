@@ -244,8 +244,13 @@ const AuthDialog = ({ open, onOpenChange, action, prefillEmail = "" }: AuthDialo
     }
   };
 
-  // Reset attempts when dialog is opened
+  // Reset attempts when dialog is opened, prevent closing when locked
   const handleDialogOpenChange = (newOpen: boolean) => {
+    // Prevent closing dialog when locked out (waiting for page reload)
+    if (!newOpen && isLocked) {
+      return;
+    }
+    
     if (newOpen) {
       // Reset when opening the dialog
       setFailedAttempts(0);
