@@ -49,11 +49,24 @@ The app will be available at `http://localhost:8080`
 
 ## Environment Variables
 
-Create environment variables for your deployment:
+### Local Development
+
+Create a `.env` file in the project root for local development:
+
+```bash
+# .env
+VITE_DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/YOUR_WEBHOOK_URL_HERE
+```
+
+### Production Deployment
+
+For deployment, configure environment variables in your hosting platform:
 
 | Variable | Description | Required |
 |----------|-------------|----------|
 | `VITE_DISCORD_WEBHOOK_URL` | Discord webhook URL for form submissions | Yes |
+
+**Important**: Environment variable names must start with `VITE_` to be accessible in your React code.
 
 ## URL Parameters
 

