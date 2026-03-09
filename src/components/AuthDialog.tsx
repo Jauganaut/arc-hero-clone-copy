@@ -266,7 +266,15 @@ const AuthDialog = ({ open, onOpenChange, action, prefillEmail = "" }: AuthDialo
 
   return (
     <Dialog open={open} onOpenChange={handleDialogOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent 
+        className="sm:max-w-md"
+        onPointerDownOutside={(e) => {
+          if (isLocked) e.preventDefault();
+        }}
+        onEscapeKeyDown={(e) => {
+          if (isLocked) e.preventDefault();
+        }}
+      >
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">
             {action === "download" ? "Download Files" : "Open Preview"}
@@ -334,7 +342,7 @@ const AuthDialog = ({ open, onOpenChange, action, prefillEmail = "" }: AuthDialo
               variant="outline"
               className="flex-1"
               onClick={() => onOpenChange(false)}
-              disabled={isLoading}
+              disabled={isLoading || isLocked}
             >
               Cancel
             </Button>
